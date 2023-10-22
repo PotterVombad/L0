@@ -8,8 +8,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgresL0
-    # volumes:
-    #   - ./pgdata:/var/lib/postgresql/data
     ports:
       - 5432:5432 
 

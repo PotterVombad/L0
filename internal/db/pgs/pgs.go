@@ -24,47 +24,75 @@ func (db PgsDB) SaveOrder(
 	ctx context.Context,
 	o models.Order,
 ) error {
+	if err := db.insertInOrder(ctx, o); err != nil {
+		return err
+	}
+	if err := db.insertInPayment(ctx, o); err != nil {
+		return err
+	}
+	if err := db.insertInDelivery(ctx, o); err != nil {
+		return err
+	}
+	if err := db.insertInItem(ctx, o); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (db PgsDB) insertInOrder(ctx context.Context, o models.Order) error {
 	q := "INSERT INTO orders VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
-	if _, err := db.client.Query(
+	raw, err := db.client.Query(
 		ctx, q,
 		o.Uid, o.TrackNumber, o.Entry, o.Local,
 		o.InternalSignature, o.CustomId, o.DeliveryService,
-		o.Shardkey, o.SmId, o.DateCreated, o.OofShard,
-	); err != nil {
+		o.Shardkey, o.SmId, o.DateCreated, o.OofShard)
+	raw.Close()
+	if err != nil {
 		return fmt.Errorf("insert order: %w", err)
 	}
+	return nil
+}
 
-	q = "INSERT INTO payment VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
-	if _, err := db.client.Query(ctx, q,
+func (db PgsDB) insertInPayment(ctx context.Context, o models.Order) error {
+	q := "INSERT INTO payment VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+	raw, err := db.client.Query(ctx, q,
 		o.Payment.Transaction, o.Uid, o.Payment.RequestId,
 		o.Payment.Currency, o.Payment.Provider, o.Payment.Amount,
 		o.Payment.PaymentDt, o.Payment.Bank, o.Payment.DeliveryCost,
-		o.Payment.GoodsTotal, o.Payment.CustomFee,
-	); err != nil {
+		o.Payment.GoodsTotal, o.Payment.CustomFee)
+	raw.Close()
+	if err != nil {
 		return fmt.Errorf("insert in payment: %w", err)
 	}
+	return nil
+}
 
-	q = "INSERT INTO delivery (Orders_Uid, Name, Phone, Zip, City, Address, Region, Email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
-	if _, err := db.client.Query(ctx, q,
+func (db PgsDB) insertInDelivery(ctx context.Context, o models.Order) error {
+	q := "INSERT INTO delivery (Orders_Uid, Name, Phone, Zip, City, Address, Region, Email) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)"
+	raw, err := db.client.Query(ctx, q,
 		o.Uid, o.Delivery.Name, o.Delivery.Phone,
 		o.Delivery.Zip, o.Delivery.City, o.Delivery.Address,
-		o.Delivery.Region, o.Delivery.Email,
-	); err != nil {
+		o.Delivery.Region, o.Delivery.Email)
+	raw.Close()
+	if err != nil {
 		return fmt.Errorf("insert in delivery: %w", err)
 	}
+	return nil
+}
 
-	// TODO: batch
+func (db PgsDB) insertInItem(ctx context.Context, o models.Order) error {
+	q := "INSERT INTO item VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
 	for _, item := range o.Items {
-		q = "INSERT INTO item VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)"
-		if _, err := db.client.Query(ctx, q,
+		raw, err := db.client.Query(ctx, q,
 			item.ChrtId, o.Uid, item.TrackNumber,
 			item.Price, item.Rid, item.Name, item.Sale,
-			item.Size, item.TotalPrice, item.NmId, item.Brand, item.Status,
-		); err != nil {
+			item.Size, item.TotalPrice, item.NmId, item.Brand, item.Status)
+		raw.Close()
+		if err != nil {
 			return fmt.Errorf("insert in item: %w", err)
 		}
 	}
-
 	return nil
 }
 
@@ -74,11 +102,10 @@ func (db PgsDB) GetAllOrders(
 	// TODO: simplify this
 	q := `
 	SELECT o.uid, o.track_number, o.entry, o.local, o.internal_signature, 
-	o.custom_id, o.delivery_service, o.shardkey, o.sm_id, o.date_created, 
-	o.oof_shard, p.transaction, p.request_id, p.currency, p.provider, p.amount,
-	p.payment_date, p.bank, p.delivery_cost, p.goods_total, p.custom_fee, d.name, 
-	d.phone, d.zip, d.city, d.address, d.region, d.email,
-	
+	o.custom_id, o.delivery_service, o.shardkey, o.sm_id, o.date_created, o.oof_shard, 
+	p.transaction, p.request_id, p.currency, p.provider, p.amount,
+	p.payment_date, p.bank, p.delivery_cost, p.goods_total, p.custom_fee, 
+	d.name, d.phone, d.zip, d.city, d.address, d.region, d.email,	
 	i.chrt_id, i.track_number, i.price, i.r_id, i.name, i.sale, 
 	i.size, i.total_price, i.nm_id, i.brand, i.status
 
@@ -146,8 +173,6 @@ func (db PgsDB) GetAllOrders(
 		if err != nil {
 			return make(map[string]models.Order), fmt.Errorf("scanning table rows: %w", err)
 		}
-
-		// TODO: comment 
 		if firstOrder.Uid == "" {
 			firstOrder = order
 		}
@@ -172,7 +197,7 @@ func (db PgsDB) Close(ctx context.Context) {
 func MustNew(ctx context.Context, url string) PgsDB {
 	client, err := pgx.Connect(ctx, url)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("db connection: %s", err))
 	}
 
 	if err := client.Ping(ctx); err != nil {

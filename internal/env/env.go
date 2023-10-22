@@ -12,7 +12,10 @@ type Environment struct {
 	}
 
 	Nats struct {
-
+		ClusterId string `env:"ClusterId,default=test-cluster"`
+		ClientId  string `env:"ClusterId,default=test-client"`
+		Subject   string `env:"Subject,default=test-subject"`
+		NatsURL   string `env:"NatsURL,default=http://localhost:4222"`
 	}
 }
 

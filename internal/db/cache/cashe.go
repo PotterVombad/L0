@@ -1,4 +1,4 @@
-package cashe
+package cache
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	Cashe interface {
+	Cache interface {
 		GetOrder(ctx context.Context, uid string) (models.Order, error)
 		Save(ctx context.Context, order models.Order) error
 		Fill(ctx context.Context, cashe map[string]models.Order)
@@ -51,8 +51,8 @@ func (c *InMemory) Fill(
 	c.cashe = data
 }
 
-func New() *InMemory {
-	return &InMemory{
+func New() InMemory {
+	return InMemory{
 		cashe: make(map[string]models.Order),
 	}
 }

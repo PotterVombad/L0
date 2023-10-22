@@ -79,16 +79,15 @@ func main() {
 		panic(err)
 	}
 
-	res := client.Ping(ctx)
-	if res != nil {
-		panic(res.Error())
+	if err := client.Ping(ctx); err != nil {
+		panic(err)
 	}
 
 	if err = makeTables(ctx, client); err != nil {
 		panic(err)
 	}
 
-	fmt.Println("good")
+	fmt.Println("tables is made")
 }
 
 func makeTables(ctx context.Context, client *pgx.Conn) (err error) {

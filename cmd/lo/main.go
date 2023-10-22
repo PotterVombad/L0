@@ -6,7 +6,7 @@ import (
 	environment "github.com/Netflix/go-env"
 	"github.com/PotterVombad/L0/internal/api"
 	"github.com/PotterVombad/L0/internal/db"
-	"github.com/PotterVombad/L0/internal/db/cashe"
+	"github.com/PotterVombad/L0/internal/db/cache"
 	"github.com/PotterVombad/L0/internal/db/pgs"
 	"github.com/PotterVombad/L0/internal/env"
 	stan "github.com/PotterVombad/L0/internal/nats"
@@ -23,17 +23,18 @@ func main() {
 	url := env.Env.GetPostgresURL()
 
 	pgsDb := pgs.MustNew(ctx, url)
-	cashe := cashe.New()
+	cashe := cache.New()
 
-	storage := db.MustNew(ctx, cashe, &pgsDb)
+	storage := db.MustNew(ctx, &cashe, &pgsDb)
 
-	// TODO env
-	clusterId := "test-cluster" 
-	clientId := "test-client"
-	subject := "test-subject"
-	natsUrl := "http://localhost:4222"
-
-	stream := stan.MustNew(ctx, clusterId, clientId, subject, natsUrl, &storage)
+	stream := stan.MustNew(
+		ctx,
+		env.Env.Nats.ClusterId,
+		env.Env.Nats.ClientId,
+		env.Env.Nats.Subject,
+		env.Env.Nats.NatsURL,
+		&storage,
+	)
 
 	defer func(stan.Stream, pgs.PgsDB) {
 		stream.Close()

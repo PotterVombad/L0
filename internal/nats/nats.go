@@ -3,7 +3,6 @@ package nats
 import (
 	"context"
 	"encoding/json"
-
 	"fmt"
 
 	"github.com/PotterVombad/L0/internal/db"
@@ -66,8 +65,7 @@ func MustNew(
 		},
 	)
 	if err != nil {
-		// TODO: panic
-		log.Panic("Could not subscribe to subject: %w", err)
+		panic(fmt.Sprintf("could not subscribe to subject: %s", err))
 	}
 
 	stream.sub = sub

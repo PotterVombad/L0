@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/PotterVombad/L0/internal/db/cashe"
+	"github.com/PotterVombad/L0/internal/db/cache"
 	"github.com/PotterVombad/L0/internal/db/pgs"
 	"github.com/PotterVombad/L0/internal/models"
 )
@@ -17,12 +17,11 @@ type (
 	}
 
 	Storage struct {
-		cashe cashe.Cashe
+		cashe cache.Cache
 		db    pgs.Database
 	}
 )
 
-// TODO: rename to cache
 func (s *Storage) Save(
 	ctx context.Context,
 	order models.Order,
@@ -55,7 +54,7 @@ func (s *Storage) Get(ctx context.Context, uid string) (order models.Order, err 
 
 func MustNew(
 	ctx context.Context,
-	cashe cashe.Cashe,
+	cashe cache.Cache,
 	db pgs.Database,
 ) Storage {
 

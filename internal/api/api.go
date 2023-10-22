@@ -16,11 +16,17 @@ type API struct {
 const indexHTML = "index.html"
 
 func (a API) search(c *gin.Context) {
-	// TODO: just id
-	// TODO: get
-	uid := c.PostForm("uid")
+	id := c.Query("id")
+	if id == "" {
+		c.HTML(
+			http.StatusOK,
+			indexHTML,
+			gin.H{},
+		)
+		return
+	}
 
-	order, err := a.storage.Get(c.Request.Context(), uid)
+	order, err := a.storage.Get(c.Request.Context(), id)
 	if err != nil {
 		c.HTML(
 			http.StatusInternalServerError,
@@ -41,23 +47,18 @@ func (a API) search(c *gin.Context) {
 	}
 
 	c.HTML(
-		http.StatusOK, 
-		indexHTML, 
+		http.StatusOK,
+		indexHTML,
 		gin.H{"request": template.HTML("<pre>" + string(bb) + "</pre>")},
 	)
-}
-
-func (a API) index(c *gin.Context) {
-	c.HTML(http.StatusOK, indexHTML, gin.H{})
 }
 
 func (a API) Run() error {
 	r := gin.Default()
 
 	r.LoadHTMLGlob("templates/*")
-	
-	r.GET("/index", a.index)
-	r.POST("/search", a.search)
+
+	r.GET("/index", a.search)
 
 	if err := r.Run(); err != nil {
 		return err

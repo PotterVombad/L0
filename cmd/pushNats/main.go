@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 
 	stan "github.com/nats-io/stan.go"
 )
@@ -123,12 +123,12 @@ var example = []string{`{
 func main() {
 	conn, err := stan.Connect("test-cluster", "test", stan.NatsURL("http://localhost:4222"))
 	if err != nil {
-		log.Fatalf("Could not connect to NATS Streaming Server: %v", err)
+		panic(fmt.Sprintf("could not connect to NATS Streaming Server: %s", err))
 	}
 	for _, s := range example {
 		err = conn.Publish("test-subject", []byte(s))
 		if err != nil {
-			log.Fatalf("Could not publish message: %v", err)
+			panic(fmt.Sprintf("could not publish message: %s", err))
 		}
 	}
 }
