@@ -99,7 +99,6 @@ func (db PgsDB) insertInItem(ctx context.Context, o models.Order) error {
 func (db PgsDB) GetAllOrders(
 	ctx context.Context,
 ) (map[string]models.Order, error) {
-	// TODO: simplify this
 	q := `
 	SELECT o.uid, o.track_number, o.entry, o.local, o.internal_signature, 
 	o.custom_id, o.delivery_service, o.shardkey, o.sm_id, o.date_created, o.oof_shard, 

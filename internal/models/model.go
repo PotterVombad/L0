@@ -60,7 +60,3 @@ type (
 	}
 )
 
-// TODO: do better
-func (o *Order) DoBetter() []string {
-	return nil
-}
